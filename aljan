@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoFix Repair Shop</title>
+    <style>
+        /* CSS: Styling for the entire page */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 900px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #0066cc;
+        }
+
+        .form-section, .queue-section {
+            margin-bottom: 40px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input, select {
+            margin-top: 5px;
+            padding: 8px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            padding: 8px;
+            background-color: #e9ecef;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0, 0, 0); /* Fallback color */
+            background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+            padding-top: 60px;
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AutoFix Repair Shop</h1>
+        </header>
+
+        <section class="form-section">
+            <h2>Add Customer</h2>
+            <form id="customer-form">
+                <label for="name">Customer Name:</label>
+                <input type="text" id="name" required>
+
+                <label for="issue">Vehicle Issue:</label>
+                <input type="text" id="issue" required>
+
+                <label for="color">Vehicle Color:</label>
+                <select id="color" required>
+                    <option value="">Select Color</option>
+                    <option value="Red">Red</option>
+                    <option value="Blue">Blue</option>
+                    <option value="Green">Green</option>
+                    <option value="Black">Black</option>
+                    <option value="White">White</option>
+                    <option value="Silver">Silver</option>
+                    <option value="N/A">N/A (Enter Custom Color)</option>
+                </select>
+
+                <label for="custom-color" id="custom-color-label" class="hidden">Custom Color:</label>
+                <input type="text" id="custom-color" class="hidden">
+
+                <label for="type">Vehicle Type:</label>
+                <select id="type" required>
+                    <option value="">Select Type</option>
+                    <option value="Car">Car</option>
+                    <option value="Truck">Truck</option>
+                    <option value="SUV">SUV</option>
+                    <option value="Motorcycle">Motorcycle</option>
+                </select>
+
+                <button type="submit">Add Customer</button>
+            </form>
+        </section>
+
+        <section class="queue-section">
+            <h2>Current Queue</h2>
+            <ul id="queue-list"></ul>
+            <button id="serve-btn">Serve Next Customer</button>
+        </section>
+    </div>
+
+    <!-- Modal for Process Complete -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Process Complete!</h2>
+            <p>The customer has been served successfully.</p>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript: Logic for managing the customer queue
+
+        const customerQueue = [];
+
+        // DOM elements
+        const customerForm = document.getElementById('customer-form');
+        const queueList = document.getElementById('queue-list');
+        const serveButton = document.getElementById('serve-btn');
+        const customColorInput = document.getElementById('custom-color');
+        const customColorLabel = document.getElementById('custom-color-label');
+        const colorSelect = document.getElementById('color');
+
+        // Modal elements
+        const modal = document.getElementById('myModal');
+        const span = document.getElementsByClassName('close')[0];
+
+        // Event Listener for the color dropdown
+        colorSelect.addEventListener('change', () => {
+            if (colorSelect.value === 'N/A') {
+                customColorInput.classList.remove('hidden');
+                customColorLabel.classList.remove('hidden');
+            } else {
+                customColorInput.classList.add('hidden');
+                customColorLabel.classList.add('hidden');
+            }
+        });
+
+        // Function to add customer to the queue
+        function addCustomer(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const issue = document.getElementById('issue').value;
+            let color = document.getElementById('color').value;
+            const customColor = document.getElementById('custom-color').value;
+            const type = document.getElementById('type').value;
+
+            if (color === 'N/A') {
+                color = customColor; // Use custom color
+            }
+
+            if (name && issue && color && type) {
+                customerQueue.push({ name, issue, color, type });
+                displayQueue();
+                customerForm.reset();
+                alert(`${name} has been added to the queue.`);
+            } else {
+                alert("Please fill in all fields.");
+            }
+        }
+
+        // Function to serve the next customer
+        function serveCustomer() {
+            if (customerQueue.length > 0) {
+                const servedCustomer = customerQueue.shift();
+                displayQueue();
+                openModal();
+            } else {
+                alert("No customers in queue.");
+            }
+        }
+
+        // Function to update the queue display
+        function displayQueue() {
+            queueList.innerHTML = '';
+            customerQueue.forEach((customer, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${customer.name} - ${customer.issue} | Color: ${customer.color} | Type: ${customer.type}`;
+                queueList.appendChild(li);
+            });
+        }
+
+        // Function to open the modal
+        function openModal() {
+            modal.style.display = 'block';
+        }
+
+        // Function to close the modal
+        span.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        // Close the modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Add event listener to form submission
+        customerForm.addEventListener('submit', addCustomer);
+
+        // Add event listener to serve button
+        serveButton.addEventListener('click', serveCustomer);
+    </script>
+</body>
+</html>
